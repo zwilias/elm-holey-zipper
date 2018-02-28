@@ -1,12 +1,14 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "summary": "A list zipper that can focus on the holes between items",
     "repository": "https://github.com/zwilias/elm-holey-zipper.git",
     "license": "BSD3",
     "source-directories": [
         "src"
     ],
-    "exposed-modules": ["List.Holey.Zipper"],
+    "exposed-modules": [
+        "List.Holey.Zipper"
+    ],
     "dependencies": {
         "elm-lang/core": "5.1.1 <= v < 6.0.0"
     },
