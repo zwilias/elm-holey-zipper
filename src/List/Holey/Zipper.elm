@@ -140,7 +140,7 @@ zipper v after =
 -}
 before : Zipper t a -> List a
 before (Zipper b _ _) =
-    b
+    List.reverse b
 
 
 {-| Conversely, list the things that come after the current location.
@@ -239,7 +239,7 @@ toList (Zipper b c a) =
             List.reverse b ++ a
 
         Just v ->
-            List.reverse b ++ [ v ] ++ a
+            List.reverse b ++ v :: a
 
 
 {-| Append a bunch of items after the zipper. This appends all the way at the end.
