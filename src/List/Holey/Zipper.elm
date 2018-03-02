@@ -29,6 +29,7 @@ module List.Holey.Zipper
         , previousHole
         , remove
         , singleton
+        , toList
         , zipper
         )
 
@@ -51,7 +52,7 @@ that hole with a value.
 
 # Extraction
 
-@docs current, before, after
+@docs current, before, after, toList
 
 
 # Navigation
@@ -93,6 +94,19 @@ type Hole
 
 Only applicable to zippers pointing at a value.
 
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.singleton "hi there"
+        |> Zipper.current
+    --> "hi there"
+
+
+    Zipper.zipper 1 [ 2, 3, 4 ]
+        |> Zipper.last
+        |> Zipper.current
+    --> 4
+
 -}
 current : Zipper Full a -> a
 current (Zipper _ f _) =
@@ -114,6 +128,13 @@ current (Zipper _ f _) =
 
 {-| Create an empty zipper. It's pointing at nothing, there's nothing before it
 and nothing after it. It's the loneliest of all zippers.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.toList Zipper.empty
+    --> []
+
 -}
 empty : Zipper Hole a
 empty =
@@ -122,6 +143,14 @@ empty =
 
 {-| A zipper with a single thing in it. Singleton is just fancy-speak for single
 thing.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.singleton "wat"
+        |> Zipper.toList
+    --> [ "wat" ]
+
 -}
 singleton : a -> Zipper Full a
 singleton v =
@@ -130,6 +159,18 @@ singleton v =
 
 {-| Construct a zipper from the head of a list and some elements to come after
 it.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "foo" []
+    --> Zipper.singleton "foo"
+
+
+    Zipper.zipper 0 [ 1, 2, 3 ]
+        |> Zipper.toList
+    --> [ 0, 1, 2, 3 ]
+
 -}
 zipper : a -> List a -> Zipper Full a
 zipper v after =
@@ -137,6 +178,16 @@ zipper v after =
 
 
 {-| List the things that come before the current location in the zipper.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 0 [ 1, 2, 3 ]
+        |> Zipper.next
+        |> Maybe.andThen Zipper.next
+        |> Maybe.map Zipper.before
+    --> Just [ 0, 1 ]
+
 -}
 before : Zipper t a -> List a
 before (Zipper b _ _) =
@@ -144,6 +195,15 @@ before (Zipper b _ _) =
 
 
 {-| Conversely, list the things that come after the current location.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 0 [ 1, 2, 3 ]
+        |> Zipper.next
+        |> Maybe.map Zipper.after
+    --> Just [ 2, 3 ]
+
 -}
 after : Zipper t a -> List a
 after (Zipper _ _ a) =
@@ -151,6 +211,34 @@ after (Zipper _ _ a) =
 
 
 {-| Move the zipper to the next item, if there is one.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 0 [ 1, 2, 3 ]
+        |> Zipper.next
+        |> Maybe.map Zipper.current
+    --> Just 1
+
+This also works from within holes:
+
+    Zipper.empty
+        |> Zipper.insertAfter "foo"
+        |> Zipper.next
+    --> Just <| Zipper.singleton "foo"
+
+If there is no `next` thing, `next` is `Nothing`.
+
+    Zipper.empty
+        |> Zipper.next
+    --> Nothing
+
+
+    Zipper.zipper 0 [ 1, 2, 3 ]
+        |> Zipper.last
+        |> Zipper.next
+    --> Nothing
+
 -}
 next : Zipper t a -> Maybe (Zipper Full a)
 next (Zipper b c a) =
@@ -168,6 +256,20 @@ next (Zipper b c a) =
 
 
 {-| Move the zipper to the previous item, if there is one.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.previous Zipper.empty
+    --> Nothing
+
+
+    Zipper.zipper "hello" [ "holey", "world" ]
+        |> Zipper.last
+        |> Zipper.previous
+        |> Maybe.map Zipper.current
+    --> Just "holey"
+
 -}
 previous : Zipper t a -> Maybe (Zipper Full a)
 previous (Zipper b c a) =
@@ -186,6 +288,16 @@ previous (Zipper b c a) =
 
 {-| Move the zipper to the hole right after the current item. A hole is a whole
 lot of nothingness, so it's always there.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "hello" [ "world" ]
+        |> Zipper.nextHole
+        |> Zipper.plug "holey"
+        |> Zipper.toList
+    --> [ "hello", "holey", "world" ]
+
 -}
 nextHole : Zipper Full a -> Zipper Hole a
 nextHole ((Zipper b _ a) as z) =
@@ -194,6 +306,16 @@ nextHole ((Zipper b _ a) as z) =
 
 {-| Move the zipper to the hole right before the current item. Feel free to plug
 that hole right up!
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.singleton "world"
+        |> Zipper.previousHole
+        |> Zipper.plug "hello"
+        |> Zipper.toList
+    --> [ "hello", "world" ]
+
 -}
 previousHole : Zipper Full a -> Zipper Hole a
 previousHole ((Zipper b _ a) as z) =
@@ -201,6 +323,13 @@ previousHole ((Zipper b _ a) as z) =
 
 
 {-| Plug a hole-y zipper.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.plug "plug" Zipper.empty
+    --> Zipper.singleton "plug"
+
 -}
 plug : a -> Zipper Hole a -> Zipper Full a
 plug v (Zipper b _ a) =
@@ -210,6 +339,16 @@ plug v (Zipper b _ a) =
 {-| Punch a hole into the zipper by removing an element entirely. You can think
 of this as collapsing the holes around the element into a single hole, but
 honestly the holes are everywhere.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "hello" [ "holey", "world" ]
+        |> Zipper.next
+        |> Maybe.map Zipper.remove
+        |> Maybe.map Zipper.toList
+    --> Just [ "hello", "world" ]
+
 -}
 remove : Zipper Full a -> Zipper Hole a
 remove (Zipper b _ a) =
