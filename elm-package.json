@@ -1,5 +1,5 @@
 {
-    "version": "1.0.1",
+    "version": "1.1.0",
     "summary": "A list zipper that can focus on the holes between items",
     "repository": "https://github.com/zwilias/elm-holey-zipper.git",
     "license": "BSD3",
