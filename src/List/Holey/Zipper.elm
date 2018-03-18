@@ -121,6 +121,7 @@ current (Zipper _ f _) =
                     v
 
                 Nothing ->
+                    -- KABOOM
                     unsafe m
     in
     unsafe f
@@ -356,6 +357,21 @@ remove (Zipper b _ a) =
 
 
 {-| Insert something after the current location.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.empty
+        |> Zipper.insertAfter "hello"
+        |> Zipper.toList
+    --> [ "hello" ]
+
+
+    Zipper.zipper 123 [ 789 ]
+        |> Zipper.insertAfter 456
+        |> Zipper.toList
+    --> [ 123, 456, 789 ]
+
 -}
 insertAfter : a -> Zipper t a -> Zipper t a
 insertAfter v (Zipper b c a) =
@@ -363,6 +379,21 @@ insertAfter v (Zipper b c a) =
 
 
 {-| Insert something before the current location.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.empty
+        |> Zipper.insertBefore "hello"
+        |> Zipper.toList
+    --> [ "hello" ]
+
+
+    Zipper.singleton 123
+        |> Zipper.insertBefore 456
+        |> Zipper.toList
+    --> [ 456, 123 ]
+
 -}
 insertBefore : a -> Zipper t a -> Zipper t a
 insertBefore v (Zipper b c a) =
@@ -370,6 +401,20 @@ insertBefore v (Zipper b c a) =
 
 
 {-| Flattens the zipper (back) into a list.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.toList Zipper.empty
+    --> []
+
+
+    Zipper.zipper 123 [ 789 ]
+        |> Zipper.nextHole
+        |> Zipper.plug 456
+        |> Zipper.toList
+    --> [ 123, 456, 789 ]
+
 -}
 toList : Zipper t a -> List a
 toList (Zipper b c a) =
@@ -382,6 +427,15 @@ toList (Zipper b c a) =
 
 
 {-| Append a bunch of items after the zipper. This appends all the way at the end.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 123 [ 456 ]
+        |> Zipper.append [ 789, 0 ]
+        |> Zipper.toList
+    --> [ 123, 456, 789, 0 ]
+
 -}
 append : List a -> Zipper t a -> Zipper t a
 append xs (Zipper b c a) =
@@ -389,6 +443,16 @@ append xs (Zipper b c a) =
 
 
 {-| Prepend a bunch of things to the zipper. All the way before anything else.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 1 [ 2, 3, 4 ]
+        |> Zipper.last
+        |> Zipper.prepend [ 5, 6, 7 ]
+        |> Zipper.toList
+    --> [ 5, 6, 7, 1, 2, 3, 4 ]
+
 -}
 prepend : List a -> Zipper t a -> Zipper t a
 prepend xs (Zipper b c a) =
@@ -400,6 +464,15 @@ that points at a thing, since it would have to return a `Maybe` otherwise.
 
 If you want to zip back to the beginning of a zipper pointing at a hole, you can
 still use `zipper |> previous |> Maybe.map first`
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 1 [ 2, 3, 4 ]
+        |> Zipper.prepend [ 4, 3, 2 ]
+        |> Zipper.first
+        |> Zipper.current
+    --> 4
 
 -}
 first : Zipper Full a -> Zipper Full a
@@ -413,6 +486,15 @@ first ((Zipper b c a) as zipper) =
 
 
 {-| Go to the last element of a zipper. Same warnings as for `first` apply.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 1 [ 2, 3, 4 ]
+        |> Zipper.last
+        |> Zipper.current
+    --> 4
+
 -}
 last : Zipper Full a -> Zipper Full a
 last ((Zipper b c a) as zipper) =
@@ -426,6 +508,23 @@ last ((Zipper b c a) as zipper) =
 
 {-| Go to the hole before the first element. Remember that holes surround
 everything! They are everywhere.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper 1 [ 3, 4 ]
+        -- now we're after 1
+        |> Zipper.nextHole
+        -- plug that hole
+        |> Zipper.plug 2
+        -- back to _before_ the first element
+        |> Zipper.beforeFirst
+        -- put something in that hole
+        |> Zipper.plug 0
+        -- and check the result
+        |> Zipper.toList
+    --> [ 0, 1, 2, 3, 4 ]
+
 -}
 beforeFirst : Zipper t a -> Zipper Hole a
 beforeFirst ((Zipper b c a) as zipper) =
@@ -476,6 +575,15 @@ findBackward predicate ((Zipper b c a) as zipper) =
 
 
 {-| Execute a function on every item in the zipper.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "first" [ "second", "third" ]
+        |> Zipper.map String.toUpper
+        |> Zipper.toList
+    --> [ "FIRST", "SECOND", "THIRD" ]
+
 -}
 map : (a -> b) -> Zipper t a -> Zipper t b
 map f (Zipper b c a) =
@@ -484,6 +592,15 @@ map f (Zipper b c a) =
 
 {-| Execute a function on the current item in the zipper, when pointing at an
 item.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "first" [ "second", "third" ]
+        |> Zipper.mapCurrent String.toUpper
+        |> Zipper.toList
+    --> [ "FIRST", "second", "third" ]
+
 -}
 mapCurrent : (a -> a) -> Zipper t a -> Zipper t a
 mapCurrent f (Zipper b c a) =
@@ -491,6 +608,16 @@ mapCurrent f (Zipper b c a) =
 
 
 {-| Execute a function on all the things that came before the current location.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "first" [ "second" ]
+        |> Zipper.nextHole
+        |> Zipper.mapBefore String.toUpper
+        |> Zipper.toList
+    --> [ "FIRST", "second" ]
+
 -}
 mapBefore : (a -> a) -> Zipper t a -> Zipper t a
 mapBefore f (Zipper b c a) =
@@ -506,6 +633,24 @@ mapAfter f (Zipper b c a) =
 
 {-| Execute a triplet of functions on the different parts of a zipper - what
 came before, what comes after, and the current thing if there is one.
+
+    import List.Holey.Zipper as Zipper
+
+
+    Zipper.zipper "first" [ "second" ]
+        |> Zipper.nextHole
+        |> Zipper.plug "one-and-a-halfth"
+        |> Zipper.mapParts
+            { before = (++) "before: "
+            , current = (++) "current: "
+            , after = (++) "after: "
+            }
+        |> Zipper.toList
+    --> [ "before: first"
+    --> , "current: one-and-a-halfth"
+    --> , "after: second"
+    --> ]
+
 -}
 mapParts :
     { before : a -> b
