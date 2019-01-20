@@ -1,12 +1,12 @@
-module List.Holey.ZipperTest exposing (..)
+module List.Holey.ZipperTest exposing (emptyTest, nextTest, previousTest, singletonTest, zipperTest)
 
 import Expect
 import List.Holey.Zipper as Zipper exposing (Full, Hole, Zipper)
 import Test exposing (..)
 
 
-empty : Test
-empty =
+emptyTest : Test
+emptyTest =
     test "Empty creates a zipper for an empty list" <|
         \_ ->
             Zipper.empty
@@ -14,8 +14,8 @@ empty =
                 |> Expect.equal []
 
 
-singleton : Test
-singleton =
+singletonTest : Test
+singletonTest =
     test "Singleton creates a zipper with a single element" <|
         \_ ->
             Zipper.singleton 3
@@ -23,8 +23,8 @@ singleton =
                 |> Expect.equal [ 3 ]
 
 
-zipper : Test
-zipper =
+zipperTest : Test
+zipperTest =
     let
         zipper : Zipper Full Int
         zipper =
@@ -58,8 +58,8 @@ zipper =
 -- Navigation
 
 
-next : Test
-next =
+nextTest : Test
+nextTest =
     let
         zipper : Zipper Full Int
         zipper =
@@ -89,8 +89,8 @@ next =
         ]
 
 
-previous : Test
-previous =
+previousTest : Test
+previousTest =
     let
         zipper : Zipper Full Int
         zipper =

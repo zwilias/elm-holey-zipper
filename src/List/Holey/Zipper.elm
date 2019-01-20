@@ -1,37 +1,10 @@
-module List.Holey.Zipper
-    exposing
-        ( Full
-        , Hole
-        , Zipper
-        , after
-        , afterLast
-        , append
-        , before
-        , beforeFirst
-        , current
-        , empty
-        , findBackward
-        , findForward
-        , first
-        , insertAfter
-        , insertBefore
-        , last
-        , map
-        , mapAfter
-        , mapBefore
-        , mapCurrent
-        , mapParts
-        , next
-        , nextHole
-        , plug
-        , prepend
-        , previous
-        , previousHole
-        , remove
-        , singleton
-        , toList
-        , zipper
-        )
+module List.Holey.Zipper exposing
+    ( Zipper, Full, Hole
+    , empty, singleton, zipper
+    , current, before, after, toList
+    , next, previous, nextHole, previousHole, first, last, beforeFirst, afterLast, findForward, findBackward
+    , map, mapCurrent, mapBefore, mapAfter, mapParts, plug, remove, append, prepend, insertAfter, insertBefore
+    )
 
 {-| Like a regular old list-zipper, except it can also focus on the holes
 _between_ elements.
@@ -174,8 +147,8 @@ it.
 
 -}
 zipper : a -> List a -> Zipper Full a
-zipper v after =
-    Zipper [] (Just v) after
+zipper v a =
+    Zipper [] (Just v) a
 
 
 {-| List the things that come before the current location in the zipper.
@@ -476,13 +449,13 @@ still use `zipper |> previous |> Maybe.map first`
 
 -}
 first : Zipper Full a -> Zipper Full a
-first ((Zipper b c a) as zipper) =
+first ((Zipper b c a) as z) =
     case List.reverse b of
         [] ->
-            zipper
+            z
 
         x :: xs ->
-            Zipper [] (Just x) (xs ++ current zipper :: a)
+            Zipper [] (Just x) (xs ++ current z :: a)
 
 
 {-| Go to the last element of a zipper. Same warnings as for `first` apply.
@@ -497,13 +470,13 @@ first ((Zipper b c a) as zipper) =
 
 -}
 last : Zipper Full a -> Zipper Full a
-last ((Zipper b c a) as zipper) =
+last ((Zipper b c a) as z) =
     case List.reverse a of
         [] ->
-            zipper
+            z
 
         x :: xs ->
-            Zipper (xs ++ current zipper :: b) (Just x) []
+            Zipper (xs ++ current z :: b) (Just x) []
 
 
 {-| Go to the hole before the first element. Remember that holes surround
@@ -527,7 +500,7 @@ everything! They are everywhere.
 
 -}
 beforeFirst : Zipper t a -> Zipper Hole a
-beforeFirst ((Zipper b c a) as zipper) =
+beforeFirst (Zipper b c a) =
     case c of
         Nothing ->
             Zipper [] Nothing (List.reverse b ++ a)
@@ -539,7 +512,7 @@ beforeFirst ((Zipper b c a) as zipper) =
 {-| Go to the hole after the end of the zipper. Into the nothingness.
 -}
 afterLast : Zipper t a -> Zipper Hole a
-afterLast ((Zipper b c a) as zipper) =
+afterLast (Zipper b c a) =
     case c of
         Nothing ->
             Zipper (List.reverse a ++ b) Nothing []
@@ -556,22 +529,48 @@ This start from the current location, and searches towards the end.
 
 -}
 findForward : (a -> Bool) -> Zipper t a -> Maybe (Zipper Full a)
-findForward predicate ((Zipper b c a) as zipper) =
+findForward predicate z =
+    findForward_ predicate z |> Maybe.map markFull
+
+
+findForward_ : (a -> Bool) -> Zipper t a -> Maybe (Zipper Full a)
+findForward_ predicate ((Zipper b c a) as z) =
     if Maybe.withDefault False (Maybe.map predicate c) then
         Just <| Zipper b c a
+
     else
-        next zipper |> Maybe.andThen (findForward predicate)
+        next z
+            |> Maybe.map markFlex
+            |> Maybe.andThen (findForward_ predicate)
 
 
 {-| Find the first element in the zipper matching a predicate, moving backwards
 from the current position.
 -}
 findBackward : (a -> Bool) -> Zipper t a -> Maybe (Zipper Full a)
-findBackward predicate ((Zipper b c a) as zipper) =
+findBackward predicate z =
+    findBackward_ predicate z |> Maybe.map markFull
+
+
+findBackward_ : (a -> Bool) -> Zipper t a -> Maybe (Zipper t a)
+findBackward_ predicate ((Zipper b c a) as z) =
     if Maybe.withDefault False (Maybe.map predicate c) then
         Just <| Zipper b c a
+
     else
-        previous zipper |> Maybe.andThen (findBackward predicate)
+        previous z
+            |> Maybe.map markFlex
+            |> Maybe.andThen (findBackward_ predicate)
+
+
+markFull : Zipper t a -> Zipper Full a
+markFull (Zipper b c a) =
+    Zipper b c a
+
+
+markFlex : Zipper Full a -> Zipper t a
+markFlex (Zipper b c a) =
+    Zipper b c a
 
 
 {-| Execute a function on every item in the zipper.
