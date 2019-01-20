@@ -3,7 +3,7 @@
     "name": "zwilias/elm-holey-zipper",
     "summary": "A list zipper that can focus on the holes between items",
     "license": "BSD-3-Clause",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "exposed-modules": [
         "List.Holey.Zipper"
     ],
